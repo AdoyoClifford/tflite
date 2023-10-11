@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.view.Surface
 import com.adoyo.landmark.domain.Classification
-import com.adoyo.landmark.domain.LandmarkClassification
+import com.adoyo.landmark.domain.LandmarkClassifier
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.task.core.BaseOptions
@@ -15,7 +15,7 @@ class TfliteLandmarkClassifier(
     private val context: Context,
     private val threshold: Float = 0.5f,
     private val maxResult: Int = 1,
-) : LandmarkClassification {
+) : LandmarkClassifier {
 
     private var classifier: ImageClassifier? = null
 
@@ -65,10 +65,10 @@ class TfliteLandmarkClassifier(
 
     private fun getOrientationFromRotation(rotation: Int): ImageProcessingOptions.Orientation {
         return when (rotation) {
-            Surface.ROTATION_0 -> ImageProcessingOptions.Orientation.RIGHT_TOP
+            Surface.ROTATION_270 -> ImageProcessingOptions.Orientation.BOTTOM_RIGHT
             Surface.ROTATION_90 -> ImageProcessingOptions.Orientation.TOP_LEFT
             Surface.ROTATION_180 -> ImageProcessingOptions.Orientation.RIGHT_BOTTOM
-            else -> ImageProcessingOptions.Orientation.BOTTOM_RIGHT
+            else -> ImageProcessingOptions.Orientation.RIGHT_TOP
 
         }
     }
