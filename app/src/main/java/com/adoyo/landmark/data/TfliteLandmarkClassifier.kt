@@ -2,9 +2,13 @@ package com.adoyo.landmark.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.view.Surface
 import com.adoyo.landmark.domain.Classification
 import com.adoyo.landmark.domain.LandmarkClassification
+import org.tensorflow.lite.support.image.ImageProcessor
+import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.task.core.BaseOptions
+import org.tensorflow.lite.task.core.vision.ImageProcessingOptions
 import org.tensorflow.lite.task.vision.classifier.ImageClassifier
 
 class TfliteLandmarkClassifier(
@@ -23,7 +27,7 @@ class TfliteLandmarkClassifier(
         try {
             classifier = ImageClassifier.createFromFileAndOptions(
                 context,
-                "",
+                "landmark.tflite",
                 options
             )
         } catch (e: IllegalStateException) {
@@ -33,7 +37,40 @@ class TfliteLandmarkClassifier(
     }
 
     override fun classify(bitmap: Bitmap, rotation: Int): List<Classification> {
+        if (classifier == null) {
+            setupClassifier()
+        }
 
+        val imageProcessor = ImageProcessor.Builder().build()
+        val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
+
+        val imageProcessingOptions = ImageProcessingOptions.builder()
+            .setOrientation(getOrientationFromRotation(rotation))
+            .build()
+
+
+        val results = classifier?.classify(tensorImage, imageProcessingOptions)
+
+        return results?.flatMap { classifications ->
+            classifications.categories.map { category ->
+                Classification(
+                    name = category.displayName,
+                    score = category.score
+                )
+            }
+        }?.distinctBy { it.name } ?: emptyList()
+
+
+    }
+
+    private fun getOrientationFromRotation(rotation: Int): ImageProcessingOptions.Orientation {
+        return when (rotation) {
+            Surface.ROTATION_0 -> ImageProcessingOptions.Orientation.RIGHT_TOP
+            Surface.ROTATION_90 -> ImageProcessingOptions.Orientation.TOP_LEFT
+            Surface.ROTATION_180 -> ImageProcessingOptions.Orientation.RIGHT_BOTTOM
+            else -> ImageProcessingOptions.Orientation.BOTTOM_RIGHT
+
+        }
     }
 
 }
